@@ -298,7 +298,8 @@
   const defaults = {
     url: "https://admdf.site/Portal.html", recent: [], layout: "auto", split: 45,
     phone: { model: "iphone-15", w: 393, h: 852, kind: "island", color: "#2d3036", bare: false, chrome: true, lightStatus: false },
-    desk: { model: "nb-1366", w: 1366, h: 768, frame: "laptop", bare: false, chrome: true }
+    // O computador começa sem moldura (só a tela); o celular, com moldura.
+    desk: { model: "nb-1366", w: 1366, h: 768, frame: "laptop", bare: true, chrome: true }
   };
   function loadConfig() {
     const saved = JSON.parse(localStorage.getItem(KEY) || "null");
