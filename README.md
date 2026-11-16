@@ -18,6 +18,7 @@
   endereço — o site fica só com o espaço que sobra, como no aparelho. Dá para desligar ("Barras" / "Navegador").
 - **Sem moldura:** mostra só a tela.
 - **Arrumação automática:** monitor em pé = um em cima do outro; monitor deitado = lado a lado.
+  Também dá para ver **só o celular** ou **só o computador**, ocupando a janela toda.
 - **Lembra de tudo:** ao reabrir, volta com o último site, os modelos e as opções.
 
 ## Como abrir
@@ -51,7 +52,7 @@ node controlar.js modelos                                # lista os modelos
 node controlar.js celular iphone-15                      # troca o celular (modelo ou: celular 412 915)
 node controlar.js pc mon-1920                            # troca o computador (modelo ou: pc 1920 1080)
 node controlar.js girar celular                          # deita / levanta
-node controlar.js arrumacao lado                         # auto | empilhado | lado
+node controlar.js arrumacao lado                         # auto | empilhado | lado | celular | pc
 node controlar.js divisao 40                             # % do espaço para o celular
 node controlar.js clicar celular "Entrar"                # clica num texto dentro do aparelho
 node controlar.js foto previa.png                        # foto da janela inteira

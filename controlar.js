@@ -7,7 +7,7 @@
 //   node controlar.js celular 412 915                        ou por uma resolução qualquer
 //   node controlar.js pc mon-1920                            mesmo para o computador (modelo ou L A)
 //   node controlar.js girar celular                          deita / levanta (celular ou pc)
-//   node controlar.js arrumacao lado                         auto | empilhado | lado
+//   node controlar.js arrumacao lado                         auto | empilhado | lado | celular | pc
 //   node controlar.js divisao 40                             % do espaço para o celular
 //   node controlar.js clicar celular "Entrar"                clica num texto dentro do celular (ou pc)
 //   node controlar.js foto [arquivo.png]                     foto da janela inteira
@@ -22,7 +22,8 @@ const { chromium } = createRequire(path.join(globalRoot, "noop.js"))("playwright
 
 const [command, ...args] = process.argv.slice(2);
 const KIND = { celular: "phone", phone: "phone", pc: "desk", computador: "desk", desk: "desk" };
-const LAYOUT = { auto: "auto", automatica: "auto", empilhado: "stack", stack: "stack", lado: "side", side: "side" };
+const LAYOUT = { auto: "auto", automatica: "auto", empilhado: "stack", stack: "stack", lado: "side", side: "side",
+  celular: "phone", phone: "phone", pc: "desk", computador: "desk", desk: "desk" };
 
 (async () => {
   // connectOverCDP "pendura" o Playwright numa janela que já está aberta (não abre outra).

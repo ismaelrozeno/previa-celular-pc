@@ -14,6 +14,8 @@
     --muted: #8a9bb0; --accent: #f5820a; --accent-2: #ffa53a; --field: rgba(5, 10, 18, .65);
   }
   * { box-sizing: border-box; }
+  /* Elemento com o atributo "hidden" some de verdade (senão o display:flex das classes venceria). */
+  [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; }
   body {
     display: flex; flex-direction: column; overflow: hidden; color: var(--text);
@@ -170,8 +172,10 @@
       <option value="auto">Automática</option>
       <option value="stack">Um em cima do outro</option>
       <option value="side">Lado a lado</option>
+      <option value="phone">Só o celular</option>
+      <option value="desk">Só o computador</option>
     </select>
-    <span class="lbl">Divisão</span>
+    <span class="lbl" id="split-label">Divisão</span>
     <input id="split" type="range" min="20" max="80" step="1" title="Quanto da tela fica para o celular">
   </header>
 
@@ -433,11 +437,17 @@
   const fitAll = () => KINDS.forEach(fit);
 
   // Arrumação: automática = lado a lado se a janela for mais larga que alta.
+  // "Só o celular" / "Só o computador" escondem o outro aparelho, e o que sobra ocupa tudo.
   function applyLayout() {
+    const only = config.layout === "phone" || config.layout === "desk" ? config.layout : "";
     const side = config.layout === "side" || (config.layout === "auto" && innerWidth > innerHeight * 1.05);
     $("#panes").className = `panes ${side ? "side" : "stack"}`;
-    $("#pane-phone").style.flex = `${config.split} 1 0`;
-    $("#pane-desk").style.flex = `${100 - config.split} 1 0`;
+    $("#pane-phone").hidden = only === "desk";
+    $("#pane-desk").hidden = only === "phone";
+    $("#pane-phone").style.flex = only ? "1 1 0" : `${config.split} 1 0`;
+    $("#pane-desk").style.flex = only ? "1 1 0" : `${100 - config.split} 1 0`;
+    // A Divisão não faz sentido com um aparelho só: some junto com o rótulo dela.
+    $("#split").hidden = $("#split-label").hidden = !!only;
     $("#layout").value = config.layout;
     $("#split").value = config.split;
   }
