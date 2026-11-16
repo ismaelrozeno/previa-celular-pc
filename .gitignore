@@ -1,0 +1,5 @@
+# Arquivos que o git deve ignorar (nunca vão para o GitHub).
+# Perfil do Edge: guarda logins e cookies. Ele fica fora desta pasta, mas se um dia cair aqui, não sobe.
+perfil-edge/
+# Fotos tiradas pelo controlar.js (só para conferir na hora).
+*.png
