@@ -2,223 +2,509 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<title>Prévia · celular e computador</title>
+<title>Prévia</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Ícone da aba/janela: o mesmo desenho do icone.svg, embutido aqui como "data URL" (o arquivo dentro do endereço). -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffa53a'/%3E%3Cstop offset='1' stop-color='%23f06a0a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23g)'/%3E%3Crect x='11' y='15' width='33' height='23' rx='3' fill='none' stroke='%23fff' stroke-width='3.6'/%3E%3Cpath d='M21 47h14M28 38v9' stroke='%23fff' stroke-width='3.6' stroke-linecap='round'/%3E%3Crect x='38' y='24' width='16' height='27' rx='4' fill='%23182030' stroke='%23fff' stroke-width='3.6'/%3E%3Ccircle cx='46' cy='46' r='1.7' fill='%23fff'/%3E%3C/svg%3E">
 <style>
-  /* Página feita para o monitor em pé (retrato): barra no topo, celular em cima e computador embaixo.
-     Cores neutras, só o laranja como destaque, igual ao visual do portal. */
-  :root { --bg: #0e1622; --panel: #16212f; --line: #26364a; --text: #e8eef5; --muted: #8fa1b5; --accent: #f5820a; }
+  /* ================= Visual geral =================
+     Fundo escuro com um brilho suave, barras "de vidro" e só o laranja como cor de destaque. */
+  :root {
+    --bg: #0b111b; --panel: rgba(22, 31, 45, .78); --line: rgba(255, 255, 255, .08); --text: #e8eef5;
+    --muted: #8a9bb0; --accent: #f5820a; --accent-2: #ffa53a; --field: rgba(5, 10, 18, .65);
+  }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
-  body { display: flex; flex-direction: column; background: var(--bg); color: var(--text);
-         font: 14px/1.3 "Segoe UI", system-ui, sans-serif; }
+  body {
+    display: flex; flex-direction: column; overflow: hidden; color: var(--text);
+    font: 14px/1.3 "Segoe UI", system-ui, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(245, 130, 10, .10), transparent 60%),
+      radial-gradient(900px 700px at 110% 110%, rgba(64, 120, 220, .10), transparent 60%),
+      var(--bg);
+  }
+  /* Pontinhos bem fracos no fundo, como uma mesa de desenho. */
+  body::before { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .5;
+    background-image: radial-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px); background-size: 22px 22px; }
 
-  /* Barras de controle */
-  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .6rem; padding: .5rem .75rem;
-         background: var(--panel); border-bottom: 1px solid var(--line); }
-  .bar strong { font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-right: .2rem; }
-  .bar label { display: flex; align-items: center; gap: .3rem; color: var(--muted); font-size: .8rem; }
-  input, select, button { font: inherit; color: var(--text); background: #0b121c; border: 1px solid var(--line);
-                          border-radius: .4rem; padding: .3rem .5rem; }
-  input[type=number] { width: 5.2rem; }
-  input[type=range] { padding: 0; accent-color: var(--accent); }
-  #path { flex: 1 1 14rem; min-width: 10rem; }
-  button { cursor: pointer; }
-  button:hover { border-color: var(--accent); }
-  button.main { background: var(--accent); border-color: var(--accent); color: #111; font-weight: 700; }
-  .zoom { color: var(--muted); font-size: .75rem; margin-left: auto; }
+  /* ---------- Barras ---------- */
+  .top, .pane-bar { position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .55rem;
+    padding: .55rem .8rem; background: var(--panel); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: .55rem; margin-right: .3rem; }
+  .brand svg { width: 30px; height: 30px; filter: drop-shadow(0 4px 10px rgba(245, 130, 10, .35)); }
+  .brand b { font-size: 1.05rem; letter-spacing: .01em; }
+  .brand small { display: block; color: var(--muted); font-size: .7rem; margin-top: 1px; }
+  .pane-bar .tag { display: flex; align-items: center; gap: .35rem; min-width: 7.5rem; color: var(--accent-2);
+    font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .pane-bar .tag svg { width: 16px; height: 16px; }
 
-  /* Cada área (celular / computador) ocupa uma parte da altura; a proporção vem do controle "Divisão". */
-  .pane { display: flex; flex-direction: column; min-height: 0; border-bottom: 1px solid var(--line); }
-  .stage { flex: 1; min-height: 0; display: grid; place-items: center; overflow: hidden; padding: 12px; }
+  input, select, button { font: inherit; color: var(--text); background: var(--field); border: 1px solid var(--line);
+    border-radius: .5rem; padding: .34rem .55rem; outline: none; }
+  input:focus, select:focus { border-color: rgba(245, 130, 10, .6); box-shadow: 0 0 0 3px rgba(245, 130, 10, .15); }
+  select option, select optgroup { background: #101826; }
+  input[type=number] { width: 4.9rem; }
+  input[type=range] { padding: 0; width: 7rem; accent-color: var(--accent); background: none; border: 0; }
+  #url { flex: 1 1 18rem; min-width: 12rem; }
+  button { cursor: pointer; display: inline-flex; align-items: center; gap: .35rem; }
+  button:hover { border-color: rgba(245, 130, 10, .55); }
+  button svg { width: 15px; height: 15px; }
+  button.main { background: linear-gradient(135deg, var(--accent-2), var(--accent)); border-color: transparent; color: #161009; font-weight: 700; }
+  .check { display: inline-flex; align-items: center; gap: .3rem; color: var(--muted); font-size: .8rem; cursor: pointer; user-select: none; }
+  .check input { accent-color: var(--accent); }
+  .lbl { color: var(--muted); font-size: .78rem; }
+  .x { color: var(--muted); }
+  .zoom { margin-left: auto; color: var(--muted); font-size: .75rem; white-space: nowrap; }
 
-  /* O "aparelho": o iframe tem o tamanho real da tela escolhida (ex.: 390×844) e é encolhido com
-     transform: scale() para caber. Assim o site se comporta como numa tela daquele tamanho de verdade. */
-  .device { position: relative; overflow: hidden; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.45); }
-  .device.phone { border: 10px solid #05080d; border-radius: 34px; }
-  .device.desk  { border: 1px solid #000; border-radius: 6px; }
-  .device iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; background: #fff; }
+  /* ---------- Áreas (celular e computador) ----------
+     "stack" = um em cima do outro (monitor em pé); "side" = lado a lado (monitor deitado). */
+  .panes { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .panes.side { flex-direction: row; }
+  .pane { position: relative; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .panes.stack .pane + .pane { border-top: 1px solid var(--line); }
+  .panes.side .pane + .pane { border-left: 1px solid var(--line); }
+  .stage { flex: 1; min-height: 0; display: grid; place-items: center; overflow: hidden; padding: 22px; }
+  /* A "holder" ocupa o tamanho já encolhido; o aparelho dentro dela tem o tamanho de verdade e é reduzido
+     com transform: scale(). Assim o site acha que está numa tela real daquele tamanho. */
+  .holder { position: relative; }
+  .device { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  iframe { display: block; border: 0; background: #fff; }
+
+  /* ================= Celular ================= */
+  .phone { --bz: 12px; --r: 54px; --sr: 42px; --sh: 54px; --rim: #2d3036;
+    display: flex; flex-direction: column; padding: var(--bz); border-radius: var(--r); background: #08090b;
+    border: 4px solid var(--rim);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07), 0 0 0 1px rgba(0, 0, 0, .7), 0 50px 90px -30px rgba(0, 0, 0, .85), 0 0 60px rgba(245, 130, 10, .06); }
+  .phone .screen { position: relative; overflow: hidden; border-radius: var(--sr); background: #000; display: flex; flex-direction: column; }
+  /* Barra de status (hora, sinal, bateria) em cima da página, como no aparelho. */
+  .status { position: relative; flex: none; height: var(--sh); display: flex; align-items: center; justify-content: space-between;
+    padding: 0 30px; color: #fff; background: #000; font: 600 16px/1 -apple-system, "SF Pro Text", "Segoe UI", sans-serif; cursor: pointer; }
+  .status.light { color: #000; background: #fff; }
+  .status .icons { display: flex; align-items: center; gap: 6px; }
+  .status .icons svg { height: 12px; fill: currentColor; }
+  .cut { position: absolute; left: 50%; transform: translateX(-50%); background: #000; }
+  /* Faixa de baixo do iPhone com a barrinha de "voltar ao início" (fica fora da área do site). */
+  .homebar { flex: none; position: relative; height: 24px; background: #000; display: none; }
+  .home-ind { position: absolute; left: 50%; top: 50%; width: 134px; height: 5px; border-radius: 3px; transform: translate(-50%, -50%);
+    background: #fff; pointer-events: none; }
+  .light-bars .homebar { background: #fff; } .light-bars .home-ind { background: #000; }
+  .bezel { display: none; align-items: center; justify-content: center; gap: 14px; flex: none; }
+  .speaker { width: 54px; height: 6px; border-radius: 4px; background: #1f2328; }
+  .cam { width: 11px; height: 11px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #3a4a6a, #0b0d12 60%); }
+  .home-btn { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #23262b; box-shadow: inset 0 0 0 1px #0d0f12; }
+  /* Botões laterais (volume e liga/desliga), por fora da borda. */
+  .pbtn { position: absolute; width: 4px; background: var(--rim); border-radius: 2px; }
+  .pb1 { left: -8px; top: 150px; height: 32px; } .pb2 { left: -8px; top: 205px; height: 62px; }
+  .pb3 { left: -8px; top: 280px; height: 62px; } .pb4 { right: -8px; top: 225px; height: 95px; }
+
+  /* Tipos de aparelho */
+  .k-island .cut { top: 11px; width: 124px; height: 36px; border-radius: 20px; }
+  .k-island .homebar, .k-notch .homebar { display: block; }
+  .k-notch { --r: 50px; --sr: 40px; --sh: 47px; }
+  .k-notch .cut { top: 0; width: 162px; height: 32px; border-radius: 0 0 20px 20px; }
+  .k-punch { --bz: 9px; --r: 42px; --sr: 34px; --sh: 30px; }
+  .k-punch .status { padding: 0 20px; font-size: 13px; }
+  .k-punch .cut { top: 50%; width: 13px; height: 13px; border-radius: 50%; transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 40% 40%, #2a3550, #000 65%); }
+  .k-home { --bz: 0 14px; --r: 56px; --sr: 3px; --sh: 20px; }
+  .k-home .status { padding: 0 8px; font-size: 12px; }
+  .k-home .bezel { display: flex; height: 82px; }
+  .k-home .cut, .k-tablet .cut { display: none; }
+  .k-tablet { --bz: 22px; --r: 38px; --sr: 18px; --sh: 26px; }
+  .k-tablet .status { padding: 0 22px; font-size: 13px; }
+  .k-tablet .cam-dot { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); }
+  .k-tablet .pb1, .k-tablet .pb2, .k-tablet .pb3 { display: none; }
+  .k-tablet .pb4 { right: 60px; left: auto; top: -8px; width: 70px; height: 4px; }
+  .cam-dot { display: none; } .k-tablet .cam-dot { display: block; }
+  /* Deitado: sem barra de status e sem botões (ficariam no lugar errado). */
+  .landscape .status, .landscape .pbtn, .landscape .homebar { display: none !important; }
+  /* Sem moldura: só a tela. */
+  .bare.phone { padding: 0; border: 0; border-radius: 0; box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .8); }
+  .bare.phone .screen { border-radius: 0; }
+  .bare .pbtn, .bare .bezel, .bare .cam-dot { display: none !important; }
+  .no-status .status, .no-status .homebar { display: none !important; }
+
+  /* ================= Computador ================= */
+  .desk { display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 40px 60px rgba(0, 0, 0, .6)); }
+  .mon { position: relative; padding: var(--bz); background: #0d0f13; border: 2px solid #2a2e36; }
+  .mon .screen { position: relative; overflow: hidden; background: #fff; }
+  .mon .cam-dot2 { position: absolute; top: calc(var(--bz) / 2 - 4px); left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #1e2633; }
+  .t-laptop .mon { --bz: 22px; border-radius: 20px 20px 4px 4px; }
+  .t-monitor .mon { --bz: 14px; border-radius: 14px; }
+  .t-monitor .cam-dot2 { display: none; }
+  .neck, .foot, .base { display: none; }
+  .t-monitor .neck { display: block; background: linear-gradient(90deg, #1b1e23, #2c3038 50%, #1b1e23); }
+  .t-monitor .foot { display: block; height: 18px; border-radius: 12px 12px 5px 5px; background: linear-gradient(#30343c, #1c1f24); }
+  .t-laptop .base { display: block; position: relative; height: 24px; border-radius: 0 0 22px 22px / 0 0 16px 16px;
+    background: linear-gradient(#d7dbe1, #a3a9b2 70%, #7d838c); }
+  .t-laptop .base::before { content: ""; position: absolute; top: 0; left: 50%; width: 18%; height: 8px; transform: translateX(-50%);
+    border-radius: 0 0 9px 9px; background: #8d939c; }
+  /* Barra do navegador, por cima da página (fica fora da resolução escolhida, como na tela de verdade). */
+  .browser { display: flex; align-items: center; gap: 14px; height: 46px; padding: 0 16px; background: #24262b; color: #aab1bb; }
+  .browser svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .addr { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; height: 32px; padding: 0 14px; border-radius: 999px;
+    background: #17181b; color: #dfe3e8; font: 14px/1 "Segoe UI", sans-serif; }
+  .addr span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .no-chrome .browser { display: none; }
+  .bare .mon { padding: 0; border: 0; border-radius: 0; }
+  .bare .neck, .bare .foot, .bare .base, .bare .cam-dot2 { display: none !important; }
+
+  /* Rodapé com dica. */
+  .tip { position: relative; z-index: 2; padding: .35rem .8rem; color: var(--muted); font-size: .72rem; background: var(--panel); border-top: 1px solid var(--line); }
+  .tip b { color: var(--text); font-weight: 600; }
 </style>
 </head>
 <body>
-  <!-- Barra geral: qual site e qual página abrir nos dois aparelhos ao mesmo tempo. -->
-  <div class="bar">
-    <strong>Prévia</strong>
-    <label>Site
-      <select id="base">
-        <option value="https://admdf.site/">admdf.site (no ar)</option>
-        <option value="http://localhost:8091/">Teste local (localhost:8091)</option>
-        <option value="http://localhost:8091/?emulador=1">Emulador (localhost:8091 ?emulador=1)</option>
-      </select>
-    </label>
-    <input id="path" list="pages" placeholder="Página, ex.: Lista-Sabado.html">
-    <datalist id="pages">
-      <option value="index.html"><option value="Acesso.html"><option value="Portal.html">
-      <option value="Lista-Sabado.html"><option value="Portaria-Lista.html"><option value="Equipes.html">
-      <option value="Liberacao.html"><option value="Liberacao-Coletiva.html"><option value="Atualizacoes.html">
-    </datalist>
-    <button class="main" id="open">Abrir nos dois</button>
-    <label>Divisão <input id="split" type="range" min="25" max="75" step="1"></label>
-  </div>
-
-  <!-- Celular -->
-  <section class="pane" id="pane-phone">
-    <div class="bar">
-      <strong>Celular</strong>
-      <select data-preset="phone">
-        <option value="360x800">Android pequeno · 360×800</option>
-        <option value="390x844">iPhone 12–15 · 390×844</option>
-        <option value="412x915">Android grande · 412×915</option>
-        <option value="430x932">iPhone Pro Max · 430×932</option>
-        <option value="768x1024">Tablet · 768×1024</option>
-        <option value="">Personalizado</option>
-      </select>
-      <label>L <input type="number" data-w="phone" min="200" max="3000"></label>
-      <label>A <input type="number" data-h="phone" min="200" max="3000"></label>
-      <button data-rotate="phone" title="Deitar / levantar o celular">Girar</button>
-      <button data-reload="phone">Recarregar</button>
-      <span class="zoom" data-zoom="phone"></span>
+  <!-- ========== Barra de cima: endereço e arrumação ========== -->
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffa53a"/><stop offset="1" stop-color="#f06a0a"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#lg)"/><rect x="11" y="15" width="33" height="23" rx="3" fill="none" stroke="#fff" stroke-width="3.6"/><path d="M21 47h14M28 38v9" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/><rect x="38" y="24" width="16" height="27" rx="4" fill="#182030" stroke="#fff" stroke-width="3.6"/><circle cx="46" cy="46" r="1.7" fill="#fff"/></svg>
+      <div><b>Prévia</b><small>celular + computador</small></div>
     </div>
-    <div class="stage"><div class="device phone"><iframe data-frame="phone" title="Celular"></iframe></div></div>
-  </section>
+    <input id="url" list="favs" spellcheck="false" placeholder="Endereço do site (ex.: https://admdf.site/Portal.html) ou só a página (Portal.html)"
+           title="Digite o endereço e aperte Enter. Só a página (ex.: Portal.html) abre no mesmo site que já está aberto.">
+    <datalist id="favs"></datalist>
+    <button class="main" id="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>Abrir</button>
+    <button id="reload-all" title="Recarregar os dois"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+    <span class="lbl">Arrumação</span>
+    <select id="layout" title="Como mostrar os dois aparelhos">
+      <option value="auto">Automática</option>
+      <option value="stack">Um em cima do outro</option>
+      <option value="side">Lado a lado</option>
+    </select>
+    <span class="lbl">Divisão</span>
+    <input id="split" type="range" min="20" max="80" step="1" title="Quanto da tela fica para o celular">
+  </header>
 
-  <!-- Computador -->
-  <section class="pane" id="pane-desk">
-    <div class="bar">
-      <strong>Computador</strong>
-      <select data-preset="desk">
-        <option value="1280x720">Notebook pequeno · 1280×720</option>
-        <option value="1366x768">Notebook · 1366×768</option>
-        <option value="1536x864">Notebook 125% · 1536×864</option>
-        <option value="1920x1080">Full HD · 1920×1080</option>
-        <option value="2560x1440">2K · 2560×1440</option>
-        <option value="">Personalizado</option>
-      </select>
-      <label>L <input type="number" data-w="desk" min="300" max="4000"></label>
-      <label>A <input type="number" data-h="desk" min="200" max="3000"></label>
-      <button data-rotate="desk" title="Trocar largura e altura">Girar</button>
-      <button data-reload="desk">Recarregar</button>
-      <span class="zoom" data-zoom="desk"></span>
-    </div>
-    <div class="stage"><div class="device desk"><iframe data-frame="desk" title="Computador"></iframe></div></div>
-  </section>
+  <main class="panes" id="panes">
+    <!-- ========== Celular ========== -->
+    <section class="pane" id="pane-phone">
+      <div class="pane-bar">
+        <span class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>Celular</span>
+        <select data-model="phone" title="Modelo do aparelho"></select>
+        <input type="number" data-w="phone" min="200" max="4000" title="Largura (px)"><span class="x">×</span>
+        <input type="number" data-h="phone" min="200" max="4000" title="Altura (px)">
+        <button data-rotate="phone" title="Deitar / levantar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 9M20 4v5h-5M20 12a8 8 0 0 1-13.7 5.6L4 15M4 20v-5h5"/></svg>Girar</button>
+        <select data-color title="Cor do aparelho">
+          <option value="#2d3036">Grafite</option><option value="#d5d8dc">Prata</option><option value="#a39a8b">Titânio</option>
+          <option value="#3c4f6e">Azul</option><option value="#5d7a68">Verde</option><option value="#e3c3c1">Rosa</option>
+        </select>
+        <label class="check"><input type="checkbox" data-bare="phone">Sem moldura</label>
+        <label class="check" title="Barra de status (hora e bateria) e faixa de baixo do iPhone"><input type="checkbox" data-chrome="phone">Barras</label>
+        <button data-reload="phone" title="Recarregar o celular"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+        <span class="zoom" data-zoom="phone"></span>
+      </div>
+      <div class="stage"><div class="holder">
+        <div class="device phone" id="dev-phone">
+          <span class="pbtn pb1"></span><span class="pbtn pb2"></span><span class="pbtn pb3"></span><span class="pbtn pb4"></span>
+          <span class="cam cam-dot"></span>
+          <div class="bezel"><span class="cam"></span><span class="speaker"></span></div>
+          <div class="screen">
+            <div class="status" title="Clique para trocar a barra de status entre escura e clara">
+              <span class="time">9:41</span><span class="cut"></span>
+              <span class="icons">
+                <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+                <svg viewBox="0 0 16 12"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0zM3.4 6.8a6.5 6.5 0 0 1 9.2 0l-1.5 1.6a4.3 4.3 0 0 0-6.2 0zM1 4.4a9.9 9.9 0 0 1 14 0l-1.5 1.5a7.8 7.8 0 0 0-11 0z"/></svg>
+                <svg viewBox="0 0 27 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2.3" y="2.3" width="16" height="7.4" rx="1.6"/><rect x="24" y="4" width="2" height="4" rx="1" opacity=".45"/></svg>
+              </span>
+            </div>
+            <iframe data-frame="phone" title="Celular"></iframe>
+            <div class="homebar"><span class="home-ind"></span></div>
+          </div>
+          <div class="bezel"><span class="home-btn"></span></div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- ========== Computador ========== -->
+    <section class="pane" id="pane-desk">
+      <div class="pane-bar">
+        <span class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Computador</span>
+        <select data-model="desk" title="Modelo da tela"></select>
+        <input type="number" data-w="desk" min="300" max="5000" title="Largura (px)"><span class="x">×</span>
+        <input type="number" data-h="desk" min="200" max="4000" title="Altura (px)">
+        <button data-rotate="desk" title="Monitor em pé / deitado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 9M20 4v5h-5M20 12a8 8 0 0 1-13.7 5.6L4 15M4 20v-5h5"/></svg>Girar</button>
+        <label class="check"><input type="checkbox" data-bare="desk">Sem moldura</label>
+        <label class="check" title="Barra do navegador com o endereço"><input type="checkbox" data-chrome="desk">Navegador</label>
+        <button data-reload="desk" title="Recarregar o computador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+        <button id="newtab" title="Abrir o endereço numa aba normal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></button>
+        <span class="zoom" data-zoom="desk"></span>
+      </div>
+      <div class="stage"><div class="holder">
+        <div class="device desk" id="dev-desk">
+          <div class="mon">
+            <span class="cam-dot2"></span>
+            <div class="screen">
+              <div class="browser">
+                <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                <div class="addr"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="addr-text"></span></div>
+                <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+              </div>
+              <iframe data-frame="desk" title="Computador"></iframe>
+            </div>
+          </div>
+          <div class="neck"></div><div class="foot"></div><div class="base"></div>
+        </div>
+      </div></div>
+    </section>
+  </main>
+
+  <div class="tip"><b>Dica:</b> clicar num link dentro de um aparelho não muda o outro — use <b>Abrir</b>. Alguns sites (Google, bancos…) não deixam ser abertos dentro de outra página.</div>
 
 <script>
-  // ---------- Configuração salva ----------
-  // localStorage guarda pequenos textos no navegador; assim, ao reabrir a prévia, tudo volta como estava.
-  const KEY = "previa-config";
-  const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
-  const config = Object.assign({
-    base: "https://admdf.site/",
-    path: "Lista-Sabado.html",
-    split: 50,
-    phone: { w: 390, h: 844 },
-    desk: { w: 1366, h: 768 }
-  }, saved);
+  // ================= Catálogo de aparelhos =================
+  // kind = formato da tela: island (ilha do iPhone novo), notch (entalhe), punch (furinho da câmera do Android),
+  // home (iPhone com botão redondo), tablet. "w" e "h" são a resolução em pixels de CSS (a que o site enxerga).
+  const PHONES = [
+    { group: "iPhone", id: "iphone-se", name: "iPhone SE", w: 375, h: 667, kind: "home" },
+    { group: "iPhone", id: "iphone-13-mini", name: "iPhone 13 mini", w: 375, h: 812, kind: "notch" },
+    { group: "iPhone", id: "iphone-14", name: "iPhone 14", w: 390, h: 844, kind: "notch" },
+    { group: "iPhone", id: "iphone-15", name: "iPhone 15 / 16", w: 393, h: 852, kind: "island" },
+    { group: "iPhone", id: "iphone-15-pro-max", name: "iPhone 15 / 16 Pro Max", w: 430, h: 932, kind: "island" },
+    { group: "Android", id: "galaxy-s24", name: "Galaxy S24", w: 360, h: 780, kind: "punch" },
+    { group: "Android", id: "galaxy-a15", name: "Galaxy A15 / A54", w: 412, h: 915, kind: "punch" },
+    { group: "Android", id: "moto-g", name: "Moto G (comum)", w: 360, h: 800, kind: "punch" },
+    { group: "Android", id: "redmi-note", name: "Redmi Note 13", w: 393, h: 873, kind: "punch" },
+    { group: "Android", id: "pixel-8", name: "Pixel 8", w: 412, h: 915, kind: "punch" },
+    { group: "Android", id: "z-fold", name: "Galaxy Z Fold (fechado)", w: 344, h: 882, kind: "punch" },
+    { group: "Tablet", id: "ipad-mini", name: "iPad mini", w: 744, h: 1133, kind: "tablet" },
+    { group: "Tablet", id: "ipad-air", name: "iPad Air", w: 820, h: 1180, kind: "tablet" },
+    { group: "Tablet", id: "galaxy-tab", name: "Galaxy Tab S9", w: 800, h: 1280, kind: "tablet" }
+  ];
+  // frame = laptop (notebook com teclado embaixo) ou monitor (com pé).
+  const DESKS = [
+    { group: "Notebook", id: "nb-1280", name: "Notebook 1280×720", w: 1280, h: 720, frame: "laptop" },
+    { group: "Notebook", id: "nb-1366", name: "Notebook HD 1366×768", w: 1366, h: 768, frame: "laptop" },
+    { group: "Notebook", id: "macbook-air", name: "MacBook Air 1440×900", w: 1440, h: 900, frame: "laptop" },
+    { group: "Notebook", id: "nb-1536", name: "Notebook Full HD c/ zoom 125% · 1536×864", w: 1536, h: 864, frame: "laptop" },
+    { group: "Notebook", id: "nb-1920", name: "Notebook Full HD 1920×1080", w: 1920, h: 1080, frame: "laptop" },
+    { group: "Monitor", id: "mon-1600", name: "Monitor HD+ 1600×900", w: 1600, h: 900, frame: "monitor" },
+    { group: "Monitor", id: "mon-1920", name: "Monitor Full HD 1920×1080", w: 1920, h: 1080, frame: "monitor" },
+    { group: "Monitor", id: "mon-2560", name: "Monitor 2K 2560×1440", w: 2560, h: 1440, frame: "monitor" },
+    { group: "Monitor", id: "mon-uw", name: "Ultrawide 2560×1080", w: 2560, h: 1080, frame: "monitor" },
+    { group: "Monitor", id: "mon-4k", name: "Monitor 4K 3840×2160", w: 3840, h: 2160, frame: "monitor" }
+  ];
+  const CATALOG = { phone: PHONES, desk: DESKS };
+  // Endereços prontos na lista do campo (o histórico recente entra na frente).
+  const FAVORITES = [
+    "https://admdf.site/Portal.html", "https://admdf.site/Lista-Sabado.html", "https://admdf.site/Portaria-Lista.html",
+    "https://admdf.site/Acesso.html", "http://localhost:8091/Portal.html", "http://localhost:8091/Portal.html?emulador=1"
+  ];
+
+  // ================= Configuração salva =================
+  // localStorage guarda textos pequenos no navegador: ao reabrir, tudo volta como estava.
+  const KEY = "previa-v2";
+  const defaults = {
+    url: "https://admdf.site/Portal.html", recent: [], layout: "auto", split: 45,
+    phone: { model: "iphone-15", w: 393, h: 852, kind: "island", color: "#2d3036", bare: false, chrome: true, lightStatus: false },
+    desk: { model: "nb-1366", w: 1366, h: 768, frame: "laptop", bare: false, chrome: true }
+  };
+  function loadConfig() {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (saved) return { ...defaults, ...saved, phone: { ...defaults.phone, ...saved.phone }, desk: { ...defaults.desk, ...saved.desk } };
+    // Veio da versão antiga? Aproveita o site, a página e os tamanhos que estavam lá.
+    const old = JSON.parse(localStorage.getItem("previa-config") || "null");
+    const config = structuredClone(defaults);
+    if (old) {
+      const [site, query] = String(old.base || "https://admdf.site/").split("?");
+      config.url = site + String(old.path || "Portal.html").replace(/^\/+/, "") + (query ? `?${query}` : "");
+      if (old.split) config.split = old.split;
+      if (old.phone) Object.assign(config.phone, matchModel("phone", old.phone.w, old.phone.h));
+      if (old.desk) Object.assign(config.desk, matchModel("desk", old.desk.w, old.desk.h));
+    }
+    return config;
+  }
+  const config = loadConfig();
   const save = () => localStorage.setItem(KEY, JSON.stringify(config));
 
-  // Atalho: $("seletor") acha um elemento na página.
-  const $ = (selector) => document.querySelector(selector);
+  const $ = (selector, root = document) => root.querySelector(selector);
   const KINDS = ["phone", "desk"];
 
-  // ---------- Montar o endereço ----------
-  // Junta o site com a página. Se o site tem "?emulador=1", a marca vai para depois do nome da página.
-  function urlOf() {
-    const [site, query] = config.base.split("?");
-    const page = config.path.trim().replace(/^\/+/, "");
-    if (!query) return site + page;
-    return site + page + (page.includes("?") ? "&" : "?") + query;
+  // Acha o modelo com aquele tamanho (de pé ou deitado). Se não houver, vira "Personalizado".
+  function matchModel(kind, w, h) {
+    const model = CATALOG[kind].find((item) => (item.w === w && item.h === h) || (item.w === h && item.h === w));
+    if (model) return { model: model.id, w, h, ...(kind === "phone" ? { kind: model.kind } : { frame: model.frame }) };
+    return { model: "custom", w, h };
   }
 
-  // ---------- Encaixar cada aparelho no espaço ----------
-  // O iframe fica com o tamanho real (ex.: 1366×768) e é encolhido pela "escala" até caber na área.
-  // Math.min pega o menor encolhimento entre largura e altura, para caber nos dois sentidos; nunca aumenta além de 100%.
+  // ================= Endereço =================
+  // Aceita endereço completo, sem "https://" (ex.: admdf.site) ou só a página (ex.: Portal.html = mesmo site).
+  function normalizeUrl(text) {
+    const value = String(text || "").trim();
+    if (!value) return config.url;
+    if (/^(https?|file):/i.test(value)) return value;
+    if (/^[\w.-]+\.html?([?#].*)?$/i.test(value) || value.startsWith("/")) {
+      try { return new URL(value, config.url).href; } catch { /* segue abaixo */ }
+    }
+    return (/^(localhost|127\.|192\.168\.|10\.)/i.test(value) ? "http://" : "https://") + value;
+  }
+  function openUrl(text) {
+    config.url = normalizeUrl(text);
+    // Guarda os 8 endereços mais recentes, sem repetir.
+    config.recent = [config.url, ...config.recent.filter((item) => item !== config.url)].slice(0, 8);
+    save();
+    $("#url").value = config.url;
+    fillFavorites();
+    KINDS.forEach((kind) => { $(`[data-frame=${kind}]`).src = config.url; });
+    $(".addr-text").textContent = config.url.replace(/^https?:\/\//, "");
+    let title = config.url;
+    try { const u = new URL(config.url); title = u.host + u.pathname; } catch { /* endereço estranho: usa como está */ }
+    document.title = `Prévia · ${title}`;
+  }
+  function fillFavorites() {
+    // Set tira os repetidos; map monta as <option> da lista que aparece ao clicar no campo.
+    $("#favs").innerHTML = [...new Set([...config.recent, ...FAVORITES])].map((url) => `<option value="${url.replace(/"/g, "&quot;")}">`).join("");
+  }
+
+  // ================= Montar cada aparelho =================
+  function applyPhone() {
+    const c = config.phone;
+    const device = $("#dev-phone");
+    const landscape = c.w > c.h;
+    const kind = c.kind || "punch";
+    device.className = `device phone k-${kind}${landscape ? " landscape" : ""}${c.bare ? " bare" : ""}${c.chrome ? "" : " no-status"}`;
+    device.style.setProperty("--rim", c.color);
+    $(".status", device).classList.toggle("light", !!c.lightStatus);
+    device.classList.toggle("light-bars", !!c.lightStatus);
+    // A barra de status (em cima) e a faixa do iPhone (embaixo) ocupam parte da tela; o site fica com o resto
+    // da altura, como no aparelho. Deitado (ou com as barras desligadas), o site usa a altura toda.
+    const bars = c.chrome && !landscape;
+    const top = bars ? parseFloat(getComputedStyle(device).getPropertyValue("--sh")) : 0;
+    const bottom = bars && (kind === "island" || kind === "notch") ? 24 : 0;
+    const frame = $("[data-frame=phone]");
+    frame.style.width = `${c.w}px`;
+    frame.style.height = `${c.h - top - bottom}px`;
+    const screen = $(".screen", device);
+    screen.style.width = `${c.w}px`;
+    screen.style.height = `${c.h}px`;
+    showSize("phone", bars ? `${c.w}×${c.h} (site: ${c.w}×${c.h - top - bottom})` : "");
+  }
+  function applyDesk() {
+    const c = config.desk;
+    const device = $("#dev-desk");
+    device.className = `device desk t-${c.frame || "monitor"}${c.bare ? " bare" : ""}${c.chrome ? "" : " no-chrome"}`;
+    const frame = $("[data-frame=desk]");
+    frame.style.width = `${c.w}px`;
+    frame.style.height = `${c.h}px`;
+    // Pé do monitor e base do notebook proporcionais ao tamanho da tela.
+    const border = 4 + (c.frame === "laptop" ? 44 : 28);
+    $(".neck", device).style.cssText = `width:${Math.round(c.w * 0.1)}px;height:${Math.round(Math.min(c.w, c.h) * 0.13)}px`;
+    $(".foot", device).style.width = `${Math.round(Math.max(c.w * 0.3, 260))}px`;
+    $(".base", device).style.width = `${Math.round(c.w + border + c.w * 0.12)}px`;
+    showSize("desk", "");
+  }
+  const apply = (kind) => (kind === "phone" ? applyPhone() : applyDesk());
+
+  // Põe os números nos campos e marca o modelo na lista.
+  function showSize(kind, extra) {
+    const c = config[kind];
+    $(`[data-w=${kind}]`).value = c.w;
+    $(`[data-h=${kind}]`).value = c.h;
+    $(`[data-model=${kind}]`).value = c.model;
+    $(`[data-bare=${kind}]`).checked = !!c.bare;
+    $(`[data-chrome=${kind}]`).checked = !!c.chrome;
+    if (kind === "phone") $("[data-color]").value = c.color;
+    $(`[data-zoom=${kind}]`).dataset.extra = extra;
+  }
+
+  // ================= Encaixar no espaço =================
+  // O aparelho tem o tamanho real; "scale" encolhe até caber (Math.min pega o menor entre largura e altura,
+  // e nunca passa de 100%). A holder recebe o tamanho já encolhido, para o centro ficar certo.
   function fit(kind) {
-    const { w, h } = config[kind];
-    const stage = $(`#pane-${kind} .stage`);
-    const device = $(`#pane-${kind} .device`);
-    const frame = $(`[data-frame=${kind}]`);
-    const border = kind === "phone" ? 20 : 2;           // grossura da moldura (dos dois lados)
-    const room = { w: stage.clientWidth - 24 - border, h: stage.clientHeight - 24 - border };
-    const scale = Math.max(0.05, Math.min(room.w / w, room.h / h, 1));
-    frame.style.width = `${w}px`;
-    frame.style.height = `${h}px`;
-    frame.style.transform = `scale(${scale})`;
-    // A caixa do aparelho conta a moldura dentro do tamanho (box-sizing: border-box), então soma a moldura;
-    // sem isso a tela perdia 20 px embaixo e na direita (cortava a barra de baixo do celular).
-    device.style.width = `${Math.round(w * scale) + border}px`;
-    device.style.height = `${Math.round(h * scale) + border}px`;
-    $(`[data-zoom=${kind}]`).textContent = `${w}×${h} · mostrado a ${Math.round(scale * 100)}%`;
+    const device = $(`#dev-${kind}`);
+    const stage = device.closest(".stage");
+    const natural = { w: device.offsetWidth, h: device.offsetHeight };
+    const room = { w: stage.clientWidth - 44, h: stage.clientHeight - 44 };
+    const scale = Math.max(0.03, Math.min(room.w / natural.w, room.h / natural.h, 1));
+    device.style.transform = `scale(${scale})`;
+    const holder = device.parentElement;
+    holder.style.width = `${natural.w * scale}px`;
+    holder.style.height = `${natural.h * scale}px`;
+    const zoom = $(`[data-zoom=${kind}]`);
+    const c = config[kind];
+    zoom.textContent = `${zoom.dataset.extra || `${c.w}×${c.h}`} · ${Math.round(scale * 100)}%`;
   }
   const fitAll = () => KINDS.forEach(fit);
 
-  // Divide a altura entre celular (em cima) e computador (embaixo).
-  function applySplit() {
+  // Arrumação: automática = lado a lado se a janela for mais larga que alta.
+  function applyLayout() {
+    const side = config.layout === "side" || (config.layout === "auto" && innerWidth > innerHeight * 1.05);
+    $("#panes").className = `panes ${side ? "side" : "stack"}`;
     $("#pane-phone").style.flex = `${config.split} 1 0`;
     $("#pane-desk").style.flex = `${100 - config.split} 1 0`;
+    $("#layout").value = config.layout;
     $("#split").value = config.split;
   }
 
-  // Põe os números nos campos e marca o modelo certo na lista (ou "Personalizado").
-  function showSize(kind) {
-    const { w, h } = config[kind];
-    $(`[data-w=${kind}]`).value = w;
-    $(`[data-h=${kind}]`).value = h;
-    const select = $(`[data-preset=${kind}]`);
-    const match = [...select.options].find((option) => option.value === `${w}x${h}`);
-    select.value = match ? match.value : "";
+  // Lista de modelos com grupos (<optgroup>) e a opção "Personalizado" no fim.
+  function fillModels(kind) {
+    const groups = [...new Set(CATALOG[kind].map((item) => item.group))];
+    $(`[data-model=${kind}]`).innerHTML = groups.map((group) => `<optgroup label="${group}">${
+      CATALOG[kind].filter((item) => item.group === group).map((item) => `<option value="${item.id}">${item.name}</option>`).join("")
+    }</optgroup>`).join("") + '<option value="custom">Personalizado</option>';
   }
 
-  // Carrega a página nos dois aparelhos.
-  function openBoth() {
-    const url = urlOf();
-    KINDS.forEach((kind) => { $(`[data-frame=${kind}]`).src = url; });
-    document.title = `Prévia · ${config.path}`;
+  // ================= Ações (também usadas pelo controlar.js) =================
+  function setModel(kind, id) {
+    const model = CATALOG[kind].find((item) => item.id === id);
+    if (!model) return false;
+    Object.assign(config[kind], { model: id, w: model.w, h: model.h }, kind === "phone" ? { kind: model.kind } : { frame: model.frame });
+    save(); apply(kind); fit(kind);
+    return true;
+  }
+  function setSize(kind, w, h) {
+    w = Math.round(Number(w)); h = Math.round(Number(h));
+    if (!(w >= 200 && w <= 5000 && h >= 200 && h <= 5000)) return false;
+    Object.assign(config[kind], matchModel(kind, w, h));
+    save(); apply(kind); fit(kind);
+    return true;
+  }
+  function rotate(kind) {
+    const c = config[kind];
+    [c.w, c.h] = [c.h, c.w];
+    save(); apply(kind); fit(kind);
   }
 
-  // ---------- Eventos (o que acontece quando você mexe nos controles) ----------
-  $("#base").addEventListener("change", (event) => { config.base = event.target.value; save(); openBoth(); });
-  $("#open").addEventListener("click", () => { config.path = $("#path").value || "index.html"; save(); openBoth(); });
-  $("#path").addEventListener("keydown", (event) => { if (event.key === "Enter") $("#open").click(); });
-  $("#split").addEventListener("input", (event) => { config.split = Number(event.target.value); save(); applySplit(); fitAll(); });
+  // ================= Eventos (o que acontece quando você mexe) =================
+  $("#go").addEventListener("click", () => openUrl($("#url").value));
+  $("#url").addEventListener("keydown", (event) => { if (event.key === "Enter") openUrl(event.target.value); });
+  $("#reload-all").addEventListener("click", () => openUrl(config.url));
+  $("#newtab").addEventListener("click", () => window.open(config.url, "_blank"));
+  $("#layout").addEventListener("change", (event) => { config.layout = event.target.value; save(); applyLayout(); fitAll(); });
+  $("#split").addEventListener("input", (event) => { config.split = Number(event.target.value); save(); applyLayout(); fitAll(); });
+  $("[data-color]").addEventListener("change", (event) => { config.phone.color = event.target.value; save(); applyPhone(); });
+  $(".status").addEventListener("click", () => { config.phone.lightStatus = !config.phone.lightStatus; save(); applyPhone(); });
 
   KINDS.forEach((kind) => {
-    // Escolheu um modelo pronto na lista.
-    $(`[data-preset=${kind}]`).addEventListener("change", (event) => {
-      if (!event.target.value) return;
-      const [w, h] = event.target.value.split("x").map(Number);
-      config[kind] = { w, h }; save(); showSize(kind); fit(kind);
+    $(`[data-model=${kind}]`).addEventListener("change", (event) => {
+      if (event.target.value === "custom") { config[kind].model = "custom"; save(); return; }
+      setModel(kind, event.target.value);
     });
-    // Digitou a largura ou a altura na mão.
-    ["w", "h"].forEach((side) => {
-      $(`[data-${side}=${kind}]`).addEventListener("change", (event) => {
-        const value = Math.round(Number(event.target.value));
-        if (value >= 200 && value <= 4000) config[kind][side] = value;
-        save(); showSize(kind); fit(kind);
-      });
-    });
-    // Girar: troca largura por altura (celular deitado, por exemplo).
-    $(`[data-rotate=${kind}]`).addEventListener("click", () => {
-      const { w, h } = config[kind];
-      config[kind] = { w: h, h: w }; save(); showSize(kind); fit(kind);
-    });
-    // Recarregar só aquele aparelho.
-    $(`[data-reload=${kind}]`).addEventListener("click", () => {
-      const frame = $(`[data-frame=${kind}]`);
-      frame.src = frame.src;
-    });
+    ["w", "h"].forEach((side) => $(`[data-${side}=${kind}]`).addEventListener("change", () =>
+      setSize(kind, $(`[data-w=${kind}]`).value, $(`[data-h=${kind}]`).value)));
+    $(`[data-rotate=${kind}]`).addEventListener("click", () => rotate(kind));
+    $(`[data-bare=${kind}]`).addEventListener("change", (event) => { config[kind].bare = event.target.checked; save(); apply(kind); fit(kind); });
+    $(`[data-chrome=${kind}]`).addEventListener("change", (event) => { config[kind].chrome = event.target.checked; save(); apply(kind); fit(kind); });
+    $(`[data-reload=${kind}]`).addEventListener("click", () => { $(`[data-frame=${kind}]`).src = config.url; });
   });
 
-  // ResizeObserver avisa quando o tamanho da janela/área muda; aí reencaixa os aparelhos.
-  new ResizeObserver(fitAll).observe(document.body);
+  // ResizeObserver avisa quando o tamanho da janela muda; aí rearruma e reencaixa.
+  new ResizeObserver(() => { applyLayout(); fitAll(); }).observe(document.body);
 
-  // ---------- Começo ----------
-  $("#base").value = config.base;
-  $("#path").value = config.path;
-  KINDS.forEach(showSize);
-  applySplit();
-  fitAll();
-  openBoth();
+  // Para o controlar.js (Playwright) comandar a prévia sem depender dos botões.
+  window.previa = {
+    abrir: openUrl, modelo: setModel, tamanho: setSize, girar: rotate,
+    arrumacao: (value) => { config.layout = value; save(); applyLayout(); fitAll(); },
+    divisao: (value) => { config.split = Math.min(80, Math.max(20, Number(value))); save(); applyLayout(); fitAll(); },
+    modelos: () => KINDS.map((kind) => CATALOG[kind].map((item) => `${kind === "phone" ? "celular" : "pc"}  ${item.id.padEnd(18)} ${item.name}`).join("\n")).join("\n"),
+    config: () => structuredClone(config)
+  };
+
+  // ================= Começo =================
+  KINDS.forEach(fillModels);
+  applyPhone(); applyDesk(); applyLayout(); fitAll();
+  openUrl(config.url);
 </script>
 </body>
 </html>
