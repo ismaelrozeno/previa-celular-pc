@@ -60,3 +60,14 @@ $atalho.IconLocation = $icone
 $atalho.Description = "Prévia celular + computador"
 $atalho.Save()
 "Atalho criado em: $(Join-Path $area 'Prévia.lnk')"
+
+# ---------- 3. Atalho do App de Treino ----------
+# Liga o servidor do app (Expo) se precisar e abre o app na prévia, só no celular (veja abrir-app-expo.ps1).
+$app = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $area "App de Treino (prévia).lnk"))
+$app.TargetPath = "powershell.exe"
+$app.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$(Join-Path $pasta 'abrir-app-expo.ps1')`""
+$app.WorkingDirectory = $pasta
+$app.IconLocation = $icone
+$app.Description = "Abre o App de Treino (React Native) na prévia"
+$app.Save()
+"Atalho criado em: $(Join-Path $area 'App de Treino (prévia).lnk')"

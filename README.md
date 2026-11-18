@@ -42,6 +42,19 @@ entre no site com o seu login; ele fica guardado nessa janela.
 Digite o endereço no campo de cima e aperte **Enter**. Só o nome da página (ex.: `Portal.html`) abre no mesmo
 site que já está aberto.
 
+## App React Native (Expo) na prévia
+
+Dois cliques no atalho **App de Treino (prévia)** da Área de Trabalho (criado pelo `criar-atalho.ps1`). Ou:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File abrir-app-expo.ps1
+powershell -ExecutionPolicy Bypass -File abrir-app-expo.ps1 -Pasta "C:\caminho\do\app" -Porta 8095 -Nome "Meu app"
+```
+
+Ele liga o servidor do Expo numa janela minimizada (fechar essa janela desliga o app), abre a prévia e mostra o
+app só no celular. É a versão web do app: fica bem perto do app de verdade, e salvar um arquivo atualiza na hora.
+A conferência final é sempre no iPhone, pelo aplicativo **Expo Go**.
+
 ## Controle pelo Playwright
 
 Com a prévia aberta (ela libera uma porta de controle, a 9333, só para este PC):
@@ -67,6 +80,7 @@ Precisa do [Node.js](https://nodejs.org) e do Playwright instalados (`npm instal
 |---|---|
 | `previa.html` | A prévia em si (página única, sem instalar nada). |
 | `abrir-previa.ps1` | Abre a prévia no Edge (ou traz para frente, se já estiver aberta). |
+| `abrir-app-expo.ps1` | Liga um app Expo (React Native) e abre ele no celular da prévia. |
 | `criar-atalho.ps1` | Cria o atalho "Prévia" na Área de Trabalho, com o ícone. |
 | `controlar.js` | Controle remoto pelo Playwright. |
 | `icone.svg` / `icone.ico` | O ícone. |
