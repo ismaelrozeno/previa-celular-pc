@@ -124,6 +124,12 @@
   .bare.phone .screen { border-radius: 0; }
   .bare .pbtn, .bare .bezel, .bare .cam-dot { display: none !important; }
   .no-status .status, .no-status .homebar { display: none !important; }
+  /* Toque: camada transparente por cima do site do celular. Ela pega o mouse e o ajudante (toque.js) manda
+     um toque de dedo para o site. O cursor vira uma bolinha, como no modo celular do DevTools. */
+  .site { position: relative; flex: none; }
+  .touch-layer { position: absolute; inset: 0; z-index: 3; touch-action: none; user-select: none;
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='14' cy='14' r='11' fill='rgba(0,0,0,.28)' stroke='white' stroke-width='2'/%3E%3C/svg%3E") 14 14, pointer; }
+  .check.dim { opacity: .55; }
 
   /* ================= Computador ================= */
   .desk { display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 40px 60px rgba(0, 0, 0, .6)); }
@@ -194,6 +200,7 @@
         </select>
         <label class="check"><input type="checkbox" data-bare="phone">Sem moldura</label>
         <label class="check" title="Barra de status (hora e bateria) e faixa de baixo do iPhone"><input type="checkbox" data-chrome="phone">Barras</label>
+        <label class="check"><input type="checkbox" data-touch>Toque</label>
         <button data-reload="phone" title="Recarregar o celular"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
         <span class="zoom" data-zoom="phone"></span>
       </div>
@@ -212,7 +219,10 @@
               </span>
             </div>
             <!-- allow: deixa o site dentro do quadro usar o "compartilhar" do Windows (ex.: enviar imagem pelo WhatsApp) e copiar/colar -->
-            <iframe data-frame="phone" title="Celular" allow="web-share; clipboard-read; clipboard-write"></iframe>
+            <div class="site">
+              <iframe data-frame="phone" title="Celular" allow="web-share; clipboard-read; clipboard-write"></iframe>
+              <div class="touch-layer" hidden></div>
+            </div>
             <div class="homebar"><span class="home-ind"></span></div>
           </div>
           <div class="bezel"><span class="home-btn"></span></div>
@@ -255,7 +265,7 @@
     </section>
   </main>
 
-  <div class="tip"><b>Dica:</b> clicar num link dentro de um aparelho não muda o outro — use <b>Abrir</b>. Alguns sites (Google, bancos…) não deixam ser abertos dentro de outra página.</div>
+  <div class="tip"><b>Dica:</b> clicar num link dentro de um aparelho não muda o outro — use <b>Abrir</b>. Com <b>Toque</b> marcado, o clique no celular vira toque de dedo (arraste para rolar). Alguns sites (Google, bancos…) não deixam ser abertos dentro de outra página.</div>
 
 <script>
   // ================= Catálogo de aparelhos =================
@@ -304,7 +314,8 @@
   const KEY = "previa-v2";
   const defaults = {
     url: "https://admdf.site/Portal.html", recent: [], layout: "auto", split: 45,
-    phone: { model: "iphone-15", w: 393, h: 852, kind: "island", color: "#2d3036", bare: false, chrome: true, lightStatus: false },
+    // touch = o clique no celular vira toque de dedo (precisa do ajudante toque.js ligado).
+    phone: { model: "iphone-15", w: 393, h: 852, kind: "island", color: "#2d3036", bare: false, chrome: true, lightStatus: false, touch: true },
     // O computador começa sem moldura (só a tela); o celular, com moldura.
     desk: { model: "nb-1366", w: 1366, h: 768, frame: "laptop", bare: true, chrome: true }
   };
@@ -383,6 +394,7 @@
     const frame = $("[data-frame=phone]");
     frame.style.width = `${c.w}px`;
     frame.style.height = `${c.h - top - bottom}px`;
+    siteSize = { w: c.w, h: c.h - top - bottom };
     const screen = $(".screen", device);
     screen.style.width = `${c.w}px`;
     screen.style.height = `${c.h}px`;
@@ -412,7 +424,7 @@
     $(`[data-model=${kind}]`).value = c.model;
     $(`[data-bare=${kind}]`).checked = !!c.bare;
     $(`[data-chrome=${kind}]`).checked = !!c.chrome;
-    if (kind === "phone") $("[data-color]").value = c.color;
+    if (kind === "phone") { $("[data-color]").value = c.color; $("[data-touch]").checked = !!c.touch; }
     $(`[data-zoom=${kind}]`).dataset.extra = extra;
   }
 
@@ -510,18 +522,82 @@
   // ResizeObserver avisa quando o tamanho da janela muda; aí rearruma e reencaixa.
   new ResizeObserver(() => { applyLayout(); fitAll(); }).observe(document.body);
 
+  // ================= Toque no celular =================
+  // O site do celular é de outro endereço: daqui não dá para mandar eventos para dentro dele. Quem manda é o
+  // ajudante toque.js (ligado pelo abrir-previa.ps1). Ele cria a ponte window.__previaToque e dá sinal de vida
+  // a cada 1,5 s chamando previa.toqueVivo. Enquanto houver sinal, a camada cobre o celular e cada clique,
+  // arrasto e rodinha vira toque de dedo no site. Sem o ajudante, a camada some e o clique volta a ser de mouse.
+  let siteSize = { w: 0, h: 0 };
+  const touch = { alive: 0, ready: false, pointer: null, move: null };
+  const layer = $(".touch-layer");
+  const touchSend = (message) => { if (typeof window.__previaToque === "function") window.__previaToque(JSON.stringify(message)); };
+  function showTouch() {
+    const helper = touch.ready && Date.now() - touch.alive < 5000;
+    layer.hidden = !(config.phone.touch && helper);
+    const label = $("[data-touch]").closest("label");
+    label.classList.toggle("dim", !!config.phone.touch && !helper);
+    label.title = helper || !config.phone.touch
+      ? "Marcado: o clique no celular vira toque de dedo (arraste para rolar). Desmarcado: clique de mouse."
+      : "O toque precisa do ajudante (toque.js). Abra a prévia pelo atalho ou rode: node toque.js";
+  }
+  // Posição do mouse dentro do site do celular, em pixels do site (desfaz o zoom de encaixe).
+  function touchPoint(event) {
+    const rect = layer.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) * siteSize.w / rect.width, y: (event.clientY - rect.top) * siteSize.h / rect.height };
+  }
+  function flushMove() { if (touch.move) { touchSend({ t: "move", ...touch.move }); touch.move = null; } }
+  layer.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || touch.pointer !== null) return;
+    event.preventDefault();
+    touch.pointer = event.pointerId;
+    layer.setPointerCapture(event.pointerId);
+    touchSend({ t: "start", ...touchPoint(event) });
+  });
+  layer.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== touch.pointer) return;
+    // Junta os movimentos e manda no máximo um por quadro da tela (requestAnimationFrame).
+    if (!touch.move) requestAnimationFrame(flushMove);
+    touch.move = touchPoint(event);
+  });
+  const touchStop = (type) => (event) => {
+    if (event.pointerId !== touch.pointer) return;
+    flushMove();
+    touch.pointer = null;
+    touchSend({ t: type });
+  };
+  layer.addEventListener("pointerup", touchStop("end"));
+  layer.addEventListener("pointercancel", touchStop("cancel"));
+  layer.addEventListener("lostpointercapture", touchStop("cancel"));
+  // Não deixa o clique tirar o foco do site (senão o teclado pararia de escrever no campo tocado).
+  layer.addEventListener("mousedown", (event) => event.preventDefault());
+  layer.addEventListener("contextmenu", (event) => event.preventDefault());
+  layer.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    touchSend({ t: "wheel", ...touchPoint(event), dx: event.deltaX, dy: event.deltaY });
+  }, { passive: false });
+  $("[data-touch]").addEventListener("change", (event) => {
+    config.phone.touch = event.target.checked; save(); showTouch();
+    touchSend({ t: "modo", ligado: config.phone.touch });
+  });
+  setInterval(showTouch, 2000);
+
   // Para o controlar.js (Playwright) comandar a prévia sem depender dos botões.
   window.previa = {
     abrir: openUrl, modelo: setModel, tamanho: setSize, girar: rotate,
     arrumacao: (value) => { config.layout = value; save(); applyLayout(); fitAll(); },
     divisao: (value) => { config.split = Math.min(80, Math.max(20, Number(value))); save(); applyLayout(); fitAll(); },
     modelos: () => KINDS.map((kind) => CATALOG[kind].map((item) => `${kind === "phone" ? "celular" : "pc"}  ${item.id.padEnd(18)} ${item.name}`).join("\n")).join("\n"),
-    config: () => structuredClone(config)
+    config: () => structuredClone(config),
+    // Sinal de vida do toque.js; responde se a caixinha "Toque" está marcada e se só o celular está na tela.
+    toqueVivo: (ready) => {
+      touch.alive = Date.now(); touch.ready = !!ready; showTouch();
+      return { ligado: !!config.phone.touch, soCelular: config.layout === "phone" };
+    }
   };
 
   // ================= Começo =================
   KINDS.forEach(fillModels);
-  applyPhone(); applyDesk(); applyLayout(); fitAll();
+  applyPhone(); applyDesk(); applyLayout(); fitAll(); showTouch();
   openUrl(config.url);
 </script>
 </body>

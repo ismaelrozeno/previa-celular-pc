@@ -17,6 +17,10 @@
 - **Barras de verdade:** barra de status (hora e bateria), a faixa de baixo do iPhone e a barra do navegador com o
   endereço — o site fica só com o espaço que sobra, como no aparelho. Dá para desligar ("Barras" / "Navegador").
 - **Sem moldura:** mostra só a tela.
+- **Toque de verdade no celular:** com **Toque** marcado, o clique no celular vira toque de dedo (o site recebe
+  `touchstart` e um clique de toque), arrastar rola a página como o dedo e o cursor vira uma bolinha. O site do
+  celular também se vê como tela de toque (`maxTouchPoints`, `ontouchstart`, `matchMedia` de `pointer: coarse` e
+  `hover: none`). O computador continua com mouse.
 - **Arrumação automática:** monitor em pé = um em cima do outro; monitor deitado = lado a lado.
   Também dá para ver **só o celular** ou **só o computador**, ocupando a janela toda.
 - **Lembra de tudo:** ao reabrir, volta com o último site, os modelos e as opções.
@@ -67,7 +71,7 @@ node controlar.js pc mon-1920                            # troca o computador (m
 node controlar.js girar celular                          # deita / levanta
 node controlar.js arrumacao lado                         # auto | empilhado | lado | celular | pc
 node controlar.js divisao 40                             # % do espaço para o celular
-node controlar.js clicar celular "Entrar"                # clica num texto dentro do aparelho
+node controlar.js clicar celular "Entrar"                # clica num texto (no celular com Toque, vira toque)
 node controlar.js foto previa.png                        # foto da janela inteira
 node controlar.js foto-aparelho celular                  # foto só da tela do aparelho
 ```
@@ -83,6 +87,7 @@ Precisa do [Node.js](https://nodejs.org) e do Playwright instalados (`npm instal
 | `abrir-app-expo.ps1` | Liga um app Expo (React Native) e abre ele no celular da prévia. |
 | `criar-atalho.ps1` | Cria o atalho "Prévia" na Área de Trabalho, com o ícone. |
 | `controlar.js` | Controle remoto pelo Playwright. |
+| `toque.js` | Ajudante do Toque: transforma o clique no celular em toque de dedo (o `abrir-previa.ps1` já liga). |
 | `icone.svg` / `icone.ico` | O ícone. |
 
 ## Bom saber
@@ -91,3 +96,7 @@ Precisa do [Node.js](https://nodejs.org) e do Playwright instalados (`npm instal
 - Alguns sites (Google, bancos, redes sociais) não deixam ser abertos dentro de outra página; nesses, o aparelho
   fica em branco ou mostra um erro. Sites próprios e a maioria dos sites simples funcionam.
 - As barras de rolagem ficam escondidas, porque no celular elas não ocupam espaço.
+- O **Toque** precisa do Node.js e do ajudante `toque.js`, que o `abrir-previa.ps1` liga escondido (e que fecha
+  junto com a prévia). Sem ele, a caixinha fica apagada e o clique é de mouse. Para ligar na mão: `node toque.js`.
+- O `@media (pointer: coarse)` e o `(hover: none)` **do CSS** só ficam iguais aos do celular em **Só o celular**.
+  Com os dois aparelhos na tela, o mesmo site roda num processo só do Edge, e essa troca vazaria para o computador.

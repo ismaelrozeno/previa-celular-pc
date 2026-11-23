@@ -21,6 +21,10 @@ public class JanelaPrevia {
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h); }
 '@
+# Ajudante do toque (toque.js): faz o clique no celular virar toque de dedo. Roda escondido; se já houver um
+# rodando, o novo sai sozinho. Sem o Node instalado, a prévia funciona igual, só que com clique de mouse.
+$node = (Get-Command node -ErrorAction SilentlyContinue).Source
+function Start-Toque { if ($node) { Start-Process $node -ArgumentList "`"$(Join-Path $pasta 'toque.js')`"" -WindowStyle Hidden } }
 $achar = { Get-Process msedge -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "Prévia*" } | Select-Object -First 1 }
 
 # Já está aberta? Só traz para frente (dois cliques no atalho não abrem uma segunda janela).
@@ -29,6 +33,7 @@ if ($aberta) {
   # Só "desminimiza" se estiver minimizada (IsIconic); senão o restaurar tiraria a janela do maximizado.
   if ([JanelaPrevia]::IsIconic($aberta.MainWindowHandle)) { [JanelaPrevia]::ShowWindow($aberta.MainWindowHandle, 9) | Out-Null }
   [JanelaPrevia]::SetForegroundWindow($aberta.MainWindowHandle) | Out-Null
+  Start-Toque
   "A prévia já estava aberta: trouxe para frente."
   exit 0
 }
@@ -46,6 +51,7 @@ Start-Process $edge -ArgumentList @(
   # Esconde a barra de rolagem: no celular ela não ocupa espaço; aqui ela roubava 15 px da largura da tela.
   "--hide-scrollbars",
   "--window-position=$($b.X),$($b.Y)", "--window-size=$($b.Width),$($b.Height)", "--app=$pagina")
+Start-Toque   # ele espera o Edge abrir a porta 9333
 
 # Espera a janela aparecer e maximiza no monitor escolhido.
 for ($i = 0; $i -lt 30; $i++) {

@@ -9,7 +9,8 @@
 //   node controlar.js girar celular                          deita / levanta (celular ou pc)
 //   node controlar.js arrumacao lado                         auto | empilhado | lado | celular | pc
 //   node controlar.js divisao 40                             % do espaço para o celular
-//   node controlar.js clicar celular "Entrar"                clica num texto dentro do celular (ou pc)
+//   node controlar.js clicar celular "Entrar"                clica num texto dentro do celular (ou pc);
+//                                                            no celular com Toque ligado, vira toque de dedo
 //   node controlar.js foto [arquivo.png]                     foto da janela inteira
 //   node controlar.js foto-aparelho celular [arquivo.png]    foto só da tela do celular (ou pc)
 const path = require("node:path");
@@ -27,7 +28,7 @@ const LAYOUT = { auto: "auto", automatica: "auto", empilhado: "stack", stack: "s
 
 (async () => {
   // connectOverCDP "pendura" o Playwright numa janela que já está aberta (não abre outra).
-  const browser = await chromium.connectOverCDP("http://127.0.0.1:9333");
+  const browser = await chromium.connectOverCDP(`http://127.0.0.1:${process.env.PREVIA_PORTA || 9333}`);
   const page = browser.contexts().flatMap((context) => context.pages()).find((item) => item.url().endsWith("previa.html"));
   if (!page) throw new Error("Janela da prévia não encontrada. Rode o abrir-previa.ps1.");
 
@@ -51,7 +52,25 @@ const LAYOUT = { auto: "auto", automatica: "auto", empilhado: "stack", stack: "s
     await call("divisao", args[0]);
   } else if (command === "clicar") {
     // frameLocator entra no iframe do aparelho; getByText acha o texto visível e clica.
-    await page.frameLocator(`[data-frame=${KIND[args[0]]}]`).getByText(args[1], { exact: false }).first().click();
+    const kind = KIND[args[0]];
+    const target = page.frameLocator(`[data-frame=${kind}]`).getByText(args[1], { exact: false }).first();
+    if (kind === "phone" && await page.locator(".touch-layer").isVisible()) {
+      // Com o Toque ligado, a camada cobre o celular: clica o mouse no ponto do texto, a camada pega o
+      // clique e o toque.js manda um toque de dedo para o site (o mesmo caminho de quando você clica).
+      // O ponto é calculado pela camada, porque o boundingBox do Playwright erra com o zoom de encaixe.
+      await target.scrollIntoViewIfNeeded();
+      const inner = await target.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: innerWidth, h: innerHeight };
+      });
+      const point = await page.evaluate(({ x, y, w, h }) => {
+        const r = document.querySelector(".touch-layer").getBoundingClientRect();
+        return { x: r.left + x * r.width / w, y: r.top + y * r.height / h };
+      }, inner);
+      await page.mouse.click(point.x, point.y);
+    } else {
+      await target.click();
+    }
   } else if (command === "foto") {
     const file = path.resolve(args[0] || "previa.png");
     await page.screenshot({ path: file });
